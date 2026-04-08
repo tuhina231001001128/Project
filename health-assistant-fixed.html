@@ -1,0 +1,587 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Health Assistant</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 10px;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 800px;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+            display: flex;
+            flex-direction: column;
+            height: 600px;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #2563eb, #1e40af);
+            color: white;
+            padding: 20px;
+            text-align: center;
+            border-radius: 15px 15px 0 0;
+        }
+
+        .header h1 {
+            font-size: 24px;
+            margin-bottom: 5px;
+        }
+
+        .header p {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+
+        .chat-box {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+            background: #f8f9fa;
+        }
+
+        .message {
+            display: flex;
+            margin-bottom: 15px;
+            align-items: flex-start;
+            gap: 10px;
+        }
+
+        .message.user {
+            flex-direction: row-reverse;
+        }
+
+        .avatar {
+            width: 35px;
+            height: 35px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            flex-shrink: 0;
+        }
+
+        .message.bot .avatar {
+            background: #2563eb;
+            color: white;
+        }
+
+        .message.user .avatar {
+            background: #10b981;
+            color: white;
+        }
+
+        .message-text {
+            max-width: 70%;
+            padding: 12px 15px;
+            border-radius: 10px;
+            line-height: 1.5;
+            word-wrap: break-word;
+        }
+
+        .message.bot .message-text {
+            background: white;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            color: #333;
+        }
+
+        .message.user .message-text {
+            background: #2563eb;
+            color: white;
+        }
+
+        .message-text img {
+            max-width: 100%;
+            border-radius: 8px;
+            margin-top: 8px;
+        }
+
+        .welcome {
+            background: #e3f2fd;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            border-left: 4px solid #2563eb;
+        }
+
+        .welcome h3 {
+            color: #1e40af;
+            margin-bottom: 8px;
+        }
+
+        .welcome ul {
+            margin-left: 20px;
+            color: #555;
+        }
+
+        .welcome li {
+            margin: 5px 0;
+        }
+
+        .input-area {
+            background: white;
+            padding: 15px;
+            border-top: 1px solid #ddd;
+        }
+
+        .file-preview {
+            display: none;
+            background: #f0f0f0;
+            padding: 10px;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .file-preview.show {
+            display: flex;
+        }
+
+        .file-info {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .file-info img {
+            max-height: 50px;
+            border-radius: 5px;
+        }
+
+        .remove-file {
+            background: #ef4444;
+            color: white;
+            border: none;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 18px;
+        }
+
+        .input-row {
+            display: flex;
+            gap: 8px;
+        }
+
+        .attach-btn, .send-btn {
+            background: #2563eb;
+            color: white;
+            border: none;
+            width: 45px;
+            height: 45px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 18px;
+            transition: all 0.2s;
+        }
+
+        .attach-btn:hover, .send-btn:hover {
+            background: #1e40af;
+            transform: scale(1.05);
+        }
+
+        .attach-btn:disabled, .send-btn:disabled {
+            background: #94a3b8;
+            cursor: not-allowed;
+            transform: scale(1);
+        }
+
+        #userInput {
+            flex: 1;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 14px;
+            font-family: Arial, sans-serif;
+            resize: none;
+            height: 45px;
+        }
+
+        #userInput:focus {
+            outline: none;
+            border-color: #2563eb;
+        }
+
+        .typing {
+            display: flex;
+            gap: 4px;
+        }
+
+        .typing span {
+            width: 8px;
+            height: 8px;
+            background: #999;
+            border-radius: 50%;
+            animation: typing 1.4s infinite;
+        }
+
+        .typing span:nth-child(2) { animation-delay: 0.2s; }
+        .typing span:nth-child(3) { animation-delay: 0.4s; }
+
+        @keyframes typing {
+            0%, 60%, 100% { transform: translateY(0); }
+            30% { transform: translateY(-10px); }
+        }
+
+        .error {
+            color: #ef4444;
+            font-weight: bold;
+        }
+
+        .warning {
+            background: #fff3cd;
+            border: 1px solid #ffc107;
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            color: #856404;
+        }
+
+        .warning strong {
+            display: block;
+            margin-bottom: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🏥 AI Health Assistant</h1>
+            <p>Your Personal Health Companion</p>
+        </div>
+            <div class="chat-box" id="chatBox">
+                <div class="warning">
+                    <strong>⚠️ IMPORTANT SETUP INSTRUCTIONS:</strong>
+                    <ol style="margin-left: 20px; margin-top: 8px;">
+                        <li>You must run this on a web server (not as a local file)</li>
+                        <li>Use one of these methods:
+                            <ul style="margin-left: 20px; margin-top: 5px;">
+                                <li><strong>Python:</strong> Run <code>python -m http.server 8000</code> in the folder</li>
+                                <li><strong>Node.js:</strong> Install <code>npm install -g http-server</code> then run <code>http-server</code></li>
+                                <li><strong>VS Code:</strong> Install "Live Server" extension and click "Go Live"</li>
+                                <li><strong>Online:</strong> Upload to any web hosting (GitHub Pages, Netlify, etc.)</li>
+                            </ul>
+                        </li>
+                        <li>Then add your API key in the code (line 211)</li>
+                        <li>Access via <code>http://localhost:8000</code></li>
+                    </ol>
+         </div>
+
+            <div class="welcome">
+                <h3>Welcome! 👋</h3>
+                <ul>
+                    <li>Ask health questions</li>
+                    <li>Upload medical reports (images/PDFs)</li>
+                    <li>Get health insights</li>
+                </ul>
+                <p style="margin-top:10px; color:#f59e0b;"><strong>⚠️ Disclaimer:</strong> This is AI assistance, not professional medical advice.</p>
+            </div>
+        </div>
+
+        <div class="input-area">
+            <div class="file-preview" id="filePreview">
+                <div class="file-info" id="fileInfo"></div>
+                <button class="remove-file" id="removeFile">×</button>
+            </div>
+
+            <div class="input-row">
+                <button class="attach-btn" id="attachBtn" title="Upload file">📎</button>
+                <input type="file" id="fileInput" accept="image/*,.pdf" style="display:none;">
+                <textarea id="userInput" placeholder="Type your health question..."></textarea>
+                <button class="send-btn" id="sendBtn">➤</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ============================================================
+        // PUT YOUR GOOGLE GEMINI API KEY HERE
+        // ============================================================
+        const API_KEY = 'AIzaSyAltk1O9dJFpfDT6mDjGgUId_CZcF9_X1o';
+        // Get free key at: https://aistudio.google.com/app/apikey
+        // ============================================================
+
+        console.log('🚀 Starting AI Health Assistant...');
+
+        // Elements
+        const chatBox = document.getElementById('chatBox');
+        const userInput = document.getElementById('userInput');
+        const sendBtn = document.getElementById('sendBtn');
+        const attachBtn = document.getElementById('attachBtn');
+        const fileInput = document.getElementById('fileInput');
+        const filePreview = document.getElementById('filePreview');
+        const fileInfo = document.getElementById('fileInfo');
+        const removeFile = document.getElementById('removeFile');
+
+        // State
+        let currentFile = null;
+        let currentFileData = null;
+
+        console.log('✅ Elements loaded');
+
+        // Auto resize textarea
+        userInput.addEventListener('input', function() {
+            this.style.height = 'auto';
+            this.style.height = Math.min(this.scrollHeight, 100) + 'px';
+        });
+
+        // Send on Enter
+        userInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                console.log('📤 Enter pressed');
+                sendMessage();
+            }
+        });
+
+        // File upload
+        attachBtn.addEventListener('click', () => fileInput.click());
+
+        fileInput.addEventListener('change', async function(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            console.log('📁 File selected:', file.name);
+            currentFile = file;
+
+            const reader = new FileReader();
+            reader.onload = function(event) {
+                currentFileData = {
+                    data: event.target.result.split(',')[1],
+                    mimeType: file.type
+                };
+
+                fileInfo.innerHTML = '';
+                if (file.type.startsWith('image/')) {
+                    const img = document.createElement('img');
+                    img.src = URL.createObjectURL(file);
+                    fileInfo.appendChild(img);
+                } else {
+                    fileInfo.innerHTML = `📄 ${file.name}`;
+                }
+                filePreview.classList.add('show');
+            };
+            reader.readAsDataURL(file);
+        });
+
+        removeFile.addEventListener('click', function() {
+            currentFile = null;
+            currentFileData = null;
+            fileInput.value = '';
+            filePreview.classList.remove('show');
+        });
+
+        function addMessage(text, isUser = false, imageUrl = null) {
+            const msgDiv = document.createElement('div');
+            msgDiv.className = `message ${isUser ? 'user' : 'bot'}`;
+
+            const avatar = document.createElement('div');
+            avatar.className = 'avatar';
+            avatar.textContent = isUser ? '👤' : '🤖';
+
+            const msgText = document.createElement('div');
+            msgText.className = 'message-text';
+
+            if (imageUrl && isUser) {
+                const img = document.createElement('img');
+                img.src = imageUrl;
+                msgText.appendChild(img);
+            }
+
+            const textP = document.createElement('p');
+            textP.innerHTML = text.replace(/\n/g, '<br>');
+            msgText.appendChild(textP);
+
+            msgDiv.appendChild(avatar);
+            msgDiv.appendChild(msgText);
+            chatBox.appendChild(msgDiv);
+            chatBox.scrollTop = chatBox.scrollHeight;
+        }
+
+        function showTyping() {
+            const typingDiv = document.createElement('div');
+            typingDiv.className = 'message bot';
+            typingDiv.id = 'typing';
+
+            const avatar = document.createElement('div');
+            avatar.className = 'avatar';
+            avatar.textContent = '🤖';
+
+            const msgText = document.createElement('div');
+            msgText.className = 'message-text';
+            msgText.innerHTML = '<div class="typing"><span></span><span></span><span></span></div>';
+
+            typingDiv.appendChild(avatar);
+            typingDiv.appendChild(msgText);
+            chatBox.appendChild(typingDiv);
+            chatBox.scrollTop = chatBox.scrollHeight;
+        }
+
+        function hideTyping() {
+            const typing = document.getElementById('typing');
+            if (typing) typing.remove();
+        }
+
+        async function callAPI(message, fileData) {
+            console.log('🌐 Calling API...');
+
+            const url = `https://aistudio.google.com/api-keys`;
+
+            const parts = [];
+            
+            if (fileData) {
+                parts.push({
+                    inlineData: {
+                        mimeType: fileData.mimeType,
+                        data: fileData.data
+                    }
+                });
+            }
+
+            parts.push({
+                text: `You are an expert AI Health Assistant. Provide helpful, accurate medical information. Remember this is for informational purposes only and not a substitute for professional medical advice.\n\nUser question: ${message}`
+            });
+
+            const requestBody = {
+                contents: [{
+                    parts: parts
+                }],
+                generationConfig: {
+                    temperature: 0.7,
+                    maxOutputTokens: 2048,
+                    topP: 0.95,
+                    topK: 40
+                },
+                safetySettings: [
+                    {
+                        category: "HARM_CATEGORY_HARASSMENT",
+                        threshold: "BLOCK_MEDIUM_AND_ABOVE"
+                    },
+                    {
+                        category: "HARM_CATEGORY_HATE_SPEECH",
+                        threshold: "BLOCK_MEDIUM_AND_ABOVE"
+                    },
+                    {
+                        category: "HARM_CATEGORY_SEXUALLY_EXPLICIT",
+                        threshold: "BLOCK_MEDIUM_AND_ABOVE"
+                    },
+                    {
+                        category: "HARM_CATEGORY_DANGEROUS_CONTENT",
+                        threshold: "BLOCK_MEDIUM_AND_ABOVE"
+                    }
+                ]
+            };
+
+            try {
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(requestBody)
+                });
+
+                console.log('Response status:', response.status);
+
+                if (!response.ok) {
+                    const errorData = await response.json().catch(() => ({}));
+                    console.error('API Error:', errorData);
+                    
+                    if (response.status === 400) {
+                        throw new Error('Invalid API key or request. Please check your API key.');
+                    } else if (response.status === 429) {
+                        throw new Error('Rate limit exceeded. Please wait a moment and try again.');
+                    } else {
+                        throw new Error(`API Error (${response.status}): ${errorData.error?.message || 'Unknown error'}`);
+                    }
+                }
+
+                const data = await response.json();
+
+                if (!data.candidates || !data.candidates[0]) {
+                    throw new Error('No response generated');
+                }
+
+                return data.candidates[0].content.parts[0].text;
+
+            } catch (error) {
+                console.error('Fetch error:', error);
+                
+                if (error.message.includes('Failed to fetch')) {
+                    throw new Error('Network error. Are you running this on a web server? See setup instructions above.');
+                }
+                throw error;
+            }
+        }
+
+        async function sendMessage() {
+            const message = userInput.value.trim();
+            
+            if (!message && !currentFile) return;
+
+            if (API_KEY === 'YOUR_GEMINI_API_KEY_HERE') {
+                alert('⚠️ Please add your API key!\n\n1. Edit this HTML file\n2. Find line 211\n3. Replace YOUR_GEMINI_API_KEY_HERE with your actual key\n4. Get key at: https://aistudio.google.com/app/apikey');
+                return;
+            }
+
+            const fileUrl = currentFile ? URL.createObjectURL(currentFile) : null;
+            const fileDataCopy = currentFileData;
+
+            addMessage(message || '(Attached file)', true, fileUrl);
+
+            userInput.value = '';
+            userInput.style.height = 'auto';
+            currentFile = null;
+            currentFileData = null;
+            fileInput.value = '';
+            filePreview.classList.remove('show');
+
+            sendBtn.disabled = true;
+            userInput.disabled = true;
+            attachBtn.disabled = true;
+
+            showTyping();
+
+            try {
+                const response = await callAPI(message || 'Please analyze this medical file', fileDataCopy);
+                hideTyping();
+                addMessage(response);
+            } catch (error) {
+                console.error('Error:', error);
+                hideTyping();
+                addMessage(`<span class="error">❌ ${error.message}</span>`, false);
+            } finally {
+                sendBtn.disabled = false;
+                userInput.disabled = false;
+                attachBtn.disabled = false;
+                userInput.focus();
+            }
+        }
+
+        sendBtn.addEventListener('click', sendMessage);
+        userInput.focus();
+
+        console.log('✅ Ready!');
+    </script>
+</body>
+</html>
